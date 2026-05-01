@@ -1,22 +1,21 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import random
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Smart Water System", layout="wide")
+st.set_page_config(page_title="Zero Hunger System", layout="wide")
 
 # ---------------- CUSTOM CSS ----------------
 st.markdown("""
 <style>
 .main {
-    background: linear-gradient(to right, #e0f7fa, #ffffff);
+    background: linear-gradient(to right, #fff3e0, #ffffff);
 }
 .title {
     text-align: center;
-    font-size: 40px;
+    font-size: 42px;
     font-weight: bold;
-    color: #0077b6;
+    color: #e65100;
 }
 .subtitle {
     text-align: center;
@@ -25,92 +24,91 @@ st.markdown("""
 }
 .card {
     background-color: white;
-    padding: 20px;
+    padding: 15px;
     border-radius: 15px;
     box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-    text-align: center;
+    margin-bottom: 10px;
+}
+.highlight {
+    background-color: #e8f5e9;
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #2e7d32;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------- HEADER ----------------
-st.markdown('<div class="title">💧 Smart Water Monitoring System</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">AI-Based Leak Detection & Redistribution</div>', unsafe_allow_html=True)
+st.markdown('<div class="title">🍽️ Zero Hunger - Food Redistribution</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Smart Matching of Surplus Food to NGOs</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
-# ---------------- DATA ----------------
-zones = ["Zone A", "Zone B", "Zone C", "Zone D", "Zone E"]
-usage = [random.randint(80, 200) for _ in zones]
+# ---------------- SIMULATED DATA ----------------
+restaurants = ["Hotel A", "Cafe B", "Restaurant C", "Bakery D"]
+foods = ["Rice", "Bread", "Veg Curry", "Fruits"]
 
-df = pd.DataFrame({
-    "Zone": zones,
-    "Water Usage (L)": usage
-})
+data = []
 
-avg_usage = df["Water Usage (L)"].mean()
+for i in range(4):
+    data.append({
+        "Restaurant": restaurants[i],
+        "Food": foods[i],
+        "Quantity": random.randint(10, 50),
+        "Expiry (hrs)": random.randint(1, 10),
+        "Distance (km)": random.randint(1, 15)
+    })
 
-status = []
-alerts = 0
+df = pd.DataFrame(data)
 
-for u in usage:
-    if u > avg_usage * 1.5:
-        status.append("🚨 Leak")
-        alerts += 1
-    elif u > avg_usage * 1.2:
-        status.append("⚠️ High")
-        alerts += 1
-    else:
-        status.append("✅ Normal")
+# ---------------- DISPLAY FOOD ----------------
+st.subheader("🍱 Available Surplus Food")
 
-df["Status"] = status
+col1, col2 = st.columns(2)
 
-# ---------------- KPI CARDS ----------------
-col1, col2, col3 = st.columns(3)
+for i, row in df.iterrows():
+    with col1 if i % 2 == 0 else col2:
+        st.markdown(f"""
+        <div class="card">
+        <h4>{row['Restaurant']}</h4>
+        <p>🍲 Food: {row['Food']}</p>
+        <p>📦 Quantity: {row['Quantity']}</p>
+        <p>⏳ Expiry: {row['Expiry (hrs)']} hrs</p>
+        <p>📍 Distance: {row['Distance (km)']} km</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ---------------- MATCHING LOGIC ----------------
+st.subheader("🤖 Smart Matching System")
+
+if st.button("🔍 Find Best Match for NGO"):
+    
+    # Priority score: lower expiry + lower distance = better
+    df["Score"] = (1 / df["Expiry (hrs)"]) + (1 / df["Distance (km)"])
+    
+    best = df.sort_values(by="Score", ascending=False).iloc[0]
+
+    st.markdown(f"""
+    <div class="highlight">
+    <h3>✅ Best Match Found</h3>
+    <p><b>Restaurant:</b> {best['Restaurant']}</p>
+    <p><b>Food:</b> {best['Food']}</p>
+    <p><b>Quantity:</b> {best['Quantity']}</p>
+    <p><b>Reason:</b> Closest location + earliest expiry</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ---------------- KPI SECTION ----------------
+total_food = df["Quantity"].sum()
+
+col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown(f'<div class="card"><h3>Total Usage</h3><h2>{sum(usage)} L</h2></div>', unsafe_allow_html=True)
+    st.metric("🍽️ Total Food Available", f"{total_food} meals")
 
 with col2:
-    st.markdown(f'<div class="card"><h3>Average Usage</h3><h2>{round(avg_usage,2)} L</h2></div>', unsafe_allow_html=True)
-
-with col3:
-    st.markdown(f'<div class="card"><h3>Alerts</h3><h2>{alerts}</h2></div>', unsafe_allow_html=True)
-
-st.markdown("---")
-
-# ---------------- TABLE + CHART ----------------
-col1, col2 = st.columns([1, 1.2])
-
-with col1:
-    st.subheader("📊 Zone Status")
-    st.dataframe(df, use_container_width=True)
-
-with col2:
-    st.subheader("📈 Usage Chart")
-    fig, ax = plt.subplots()
-    ax.bar(df["Zone"], df["Water Usage (L)"])
-    ax.set_xlabel("Zones")
-    ax.set_ylabel("Water Usage (L)")
-    ax.set_title("Water Consumption")
-    st.pyplot(fig)
-
-st.markdown("---")
-
-# ---------------- REDISTRIBUTION ----------------
-st.subheader("🔄 Smart Redistribution Suggestions")
-
-high = df[df["Status"] != "✅ Normal"]
-normal = df[df["Status"] == "✅ Normal"]
-
-if not high.empty and not normal.empty:
-    for i in range(min(len(high), len(normal))):
-        st.success(f"➡️ Redirect water from {normal.iloc[i]['Zone']} to {high.iloc[i]['Zone']}")
-else:
-    st.info("All zones are balanced. No action needed.")
-
-st.markdown("---")
-
-# ---------------- BUTTON ----------------
-if st.button("🔍 Run New Analysis"):
-    st.rerun()
+    st.metric("🏢 Active Restaurants", len(df))
