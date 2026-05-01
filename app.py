@@ -1,114 +1,199 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 import random
 
-# ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Zero Hunger System", layout="wide")
+st.set_page_config(layout="wide")
 
-# ---------------- CUSTOM CSS ----------------
+# ---------------- CSS (IMPORTANT FOR UI) ----------------
 st.markdown("""
 <style>
-.main {
-    background: linear-gradient(to right, #fff3e0, #ffffff);
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background: linear-gradient(#0f3d2e, #1b5e20);
+    color: white;
 }
-.title {
-    text-align: center;
-    font-size: 42px;
-    font-weight: bold;
-    color: #e65100;
-}
-.subtitle {
-    text-align: center;
-    color: grey;
-    margin-bottom: 20px;
-}
+
+/* Cards */
 .card {
-    background-color: white;
-    padding: 15px;
-    border-radius: 15px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-    margin-bottom: 10px;
+    background: white;
+    padding: 18px;
+    border-radius: 14px;
+    box-shadow: 0px 3px 12px rgba(0,0,0,0.08);
 }
-.highlight {
-    background-color: #e8f5e9;
-    padding: 20px;
-    border-radius: 15px;
-    border: 2px solid #2e7d32;
+
+/* Titles */
+h1, h2, h3 {
+    color: #1b5e20;
+}
+
+/* Section */
+.section {
+    background: white;
+    padding: 15px;
+    border-radius: 14px;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER ----------------
-st.markdown('<div class="title">🍽️ Zero Hunger - Food Redistribution</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Smart Matching of Surplus Food to NGOs</div>', unsafe_allow_html=True)
+# ---------------- ROLE SELECT ----------------
+st.sidebar.title("🍃 AI FOOD SYSTEM")
+role = st.sidebar.selectbox("Select Role", ["Admin", "Donor (Hotel)", "NGO"])
 
-st.markdown("---")
+# =====================================================
+# 🟢 ADMIN DASHBOARD
+# =====================================================
+if role == "Admin":
 
-# ---------------- SIMULATED DATA ----------------
-restaurants = ["Hotel A", "Cafe B", "Restaurant C", "Bakery D"]
-foods = ["Rice", "Bread", "Veg Curry", "Fruits"]
+    st.title("📊 Dashboard")
+    st.caption("Optimize surplus food allocation and minimize waste")
 
-data = []
+    # KPI CARDS
+    col1, col2, col3, col4 = st.columns(4)
 
-for i in range(4):
-    data.append({
-        "Restaurant": restaurants[i],
-        "Food": foods[i],
-        "Quantity": random.randint(10, 50),
-        "Expiry (hrs)": random.randint(1, 10),
-        "Distance (km)": random.randint(1, 15)
+    col1.metric("Meals Saved", "12,540", "+18%")
+    col2.metric("Food Distributed", "8,320 kg", "+12%")
+    col3.metric("Donors", "86", "+5")
+    col4.metric("NGOs", "42", "+3")
+
+    st.markdown("---")
+
+    # MAP + TABLE
+    col1, col2 = st.columns([2,1])
+
+    with col1:
+        st.markdown("### 📍 Live Map - Active Routes")
+        st.map(pd.DataFrame({
+            'lat': [12.97, 12.98, 12.96],
+            'lon': [77.59, 77.60, 77.58]
+        }))
+
+    with col2:
+        st.markdown("### 📋 Pending Allocations")
+
+        df = pd.DataFrame({
+            "Food": ["Meals", "Fruits", "Veg"],
+            "Qty": [120, 80, 150],
+            "Expiry": ["2 hrs", "5 hrs", "10 hrs"],
+            "Priority": ["High", "Medium", "Low"]
+        })
+        st.dataframe(df)
+
+    st.markdown("---")
+
+    # CHARTS
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("### Expiry Status")
+        fig, ax = plt.subplots()
+        ax.pie([30,30,25,15], labels=["High","Med","Low","Safe"], autopct='%1.1f%%')
+        st.pyplot(fig)
+
+    with col2:
+        st.markdown("### Meals Trend")
+        fig, ax = plt.subplots()
+        ax.plot([1,2,3,4,5], [2000,4000,6000,7500,9000])
+        st.pyplot(fig)
+
+    with col3:
+        st.markdown("### Impact")
+        st.metric("Meals Saved", "250,400")
+        st.metric("CO2 Saved", "18,540 kg")
+        st.metric("Money Saved", "₹6,75,000")
+
+    st.success("120 meals allocated to NGO (2 mins ago)")
+
+# =====================================================
+# 🏨 DONOR DASHBOARD
+# =====================================================
+elif role == "Donor (Hotel)":
+
+    st.title("🏨 Donor Dashboard")
+
+    # ADD FOOD
+    st.markdown("### ➕ Add Food Listing")
+
+    col1, col2, col3 = st.columns(3)
+
+    food = col1.selectbox("Food Type", ["Rice","Bread","Veg","Fruits"])
+    qty = col2.number_input("Quantity", 10)
+    expiry = col3.slider("Expiry (hrs)", 1, 24)
+
+    if st.button("Add Food"):
+        st.success("Food Listing Added!")
+
+    st.markdown("---")
+
+    # DONATIONS TABLE
+    st.markdown("### 📦 Your Donations")
+
+    df = pd.DataFrame({
+        "Food": ["Rice","Bread","Veg"],
+        "Qty": [100,80,120],
+        "Status": ["Pending","Picked","Delivered"]
     })
 
-df = pd.DataFrame(data)
+    st.dataframe(df)
 
-# ---------------- DISPLAY FOOD ----------------
-st.subheader("🍱 Available Surplus Food")
+    st.markdown("---")
 
-col1, col2 = st.columns(2)
+    # IMPACT
+    col1, col2 = st.columns(2)
+    col1.metric("Meals Donated", "2,340")
+    col2.metric("Waste Reduced", "1,200 kg")
 
-for i, row in df.iterrows():
-    with col1 if i % 2 == 0 else col2:
-        st.markdown(f"""
-        <div class="card">
-        <h4>{row['Restaurant']}</h4>
-        <p>🍲 Food: {row['Food']}</p>
-        <p>📦 Quantity: {row['Quantity']}</p>
-        <p>⏳ Expiry: {row['Expiry (hrs)']} hrs</p>
-        <p>📍 Distance: {row['Distance (km)']} km</p>
-        </div>
-        """, unsafe_allow_html=True)
+# =====================================================
+# 🏢 NGO DASHBOARD
+# =====================================================
+elif role == "NGO":
 
-st.markdown("---")
+    st.title("🏢 NGO Dashboard")
 
-# ---------------- MATCHING LOGIC ----------------
-st.subheader("🤖 Smart Matching System")
+    # AVAILABLE FOOD
+    st.markdown("### 🍱 Available Food")
 
-if st.button("🔍 Find Best Match for NGO"):
-    
-    # Priority score: lower expiry + lower distance = better
-    df["Score"] = (1 / df["Expiry (hrs)"]) + (1 / df["Distance (km)"])
-    
-    best = df.sort_values(by="Score", ascending=False).iloc[0]
+    df = pd.DataFrame({
+        "Food": ["Rice","Bread","Fruits"],
+        "Qty": [120,80,60],
+        "Expiry": [2,5,10],
+        "Distance": [3,6,8]
+    })
 
-    st.markdown(f"""
-    <div class="highlight">
-    <h3>✅ Best Match Found</h3>
-    <p><b>Restaurant:</b> {best['Restaurant']}</p>
-    <p><b>Food:</b> {best['Food']}</p>
-    <p><b>Quantity:</b> {best['Quantity']}</p>
-    <p><b>Reason:</b> Closest location + earliest expiry</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.dataframe(df)
 
-st.markdown("---")
+    st.markdown("---")
 
-# ---------------- KPI SECTION ----------------
-total_food = df["Quantity"].sum()
+    # MATCHING
+    st.markdown("### 🤖 Smart Allocation")
 
-col1, col2 = st.columns(2)
+    if st.button("Find Best Match"):
 
-with col1:
-    st.metric("🍽️ Total Food Available", f"{total_food} meals")
+        df["Score"] = (1/df["Expiry"]) + (1/df["Distance"])
+        best = df.sort_values(by="Score", ascending=False).iloc[0]
 
-with col2:
-    st.metric("🏢 Active Restaurants", len(df))
+        st.success(f"""
+        Best Match → {best['Food']}
+        Quantity: {best['Qty']}
+        Reason: Closest + Expiry Priority
+        """)
+
+    st.markdown("---")
+
+    # DELIVERY
+    st.markdown("### 🚚 Active Deliveries")
+
+    delivery = pd.DataFrame({
+        "Food": ["Rice","Bread"],
+        "Status": ["In Transit","Arriving"],
+        "ETA": ["15 mins","30 mins"]
+    })
+
+    st.dataframe(delivery)
+
+    st.markdown("---")
+
+    col1, col2 = st.columns(2)
+    col1.metric("Meals Received", "5,600")
+    col2.metric("People Served", "3,200")
